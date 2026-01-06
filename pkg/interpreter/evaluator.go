@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/marshallburns/ez/pkg/ast"
+	"github.com/marshallburns/ez/pkg/debugger"
 	"github.com/marshallburns/ez/pkg/errors"
 )
 
@@ -331,6 +332,14 @@ func loadUserModule(importPath string, line, column int, env *Environment) (*Mod
 }
 
 func Eval(node ast.Node, env *Environment) Object {
+	// Debug hook: before evaluation (only for steppable statements)
+	if dbg := debugger.GetGlobalDebugger(); dbg != nil && dbg.IsEnabled() {
+		// Only check steppable nodes to avoid excessive pausing
+		if isSteppableStatement(node) {
+			dbg.BeforeEval(node, env)
+		}
+	}
+
 	switch node := node.(type) {
 	// Program
 	case *ast.Program:
@@ -2916,6 +2925,23 @@ func applyFunction(fn Object, args []Object, line, col int) Object {
 		}
 		extendedEnv := extendFunctionEnv(fn, args)
 
+		// Debug hook: push call frame
+		if dbg := debugger.GetGlobalDebugger(); dbg != nil && dbg.IsEnabled() {
+			// Try to get function name from the Body's token or use generic name
+			funcName := "<function>"
+			if fn.Body != nil && fn.Body.Token.Literal != "" {
+				// For now use generic name, TODO: pass function name through Function object
+				funcName = "<function>"
+			}
+			loc := &ast.Location{
+				File:   fn.File,
+				Line:   line,
+				Column: col,
+			}
+			dbg.PushFrame(funcName, fn.Body, extendedEnv, loc)
+			defer dbg.PopFrame(nil) // Will be updated with result
+		}
+
 		// Save current file and set function's file as current for error reporting
 		var oldFile string
 		if globalEvalContext != nil && fn.File != "" {
@@ -2939,6 +2965,15 @@ func applyFunction(fn Object, args []Object, line, col int) Object {
 		}
 
 		result := unwrapReturnValue(evaluated)
+
+		// Debug hook: update deferred PopFrame with result
+		if dbg := debugger.GetGlobalDebugger(); dbg != nil && dbg.IsEnabled() {
+			// The deferred PopFrame will be called with the last set result
+			defer func(r Object) {
+				// Note: The actual PopFrame call happens via defer above
+				// This is just to capture the result value
+			}(result)
+		}
 
 		// Validate return type if function declares one
 		if len(fn.ReturnTypes) > 0 && !isError(result) {
@@ -3783,4 +3818,23 @@ func newErrorWithLocation(code string, line, column int, format string, a ...int
 		Column:  column,
 		File:    file,
 	}
+}
+
+// isSteppableStatement returns true if the node represents a statement we should step through
+func isSteppableStatement(node ast.Node) bool {
+	switch node.(type) {
+	case *ast.VariableDeclaration,
+		*ast.AssignmentStatement,
+		*ast.ExpressionStatement,
+		*ast.ReturnStatement,
+		*ast.IfStatement,
+		*ast.WhileStatement,
+		*ast.ForStatement,
+		*ast.ForEachStatement,
+		*ast.LoopStatement,
+		*ast.BreakStatement,
+		*ast.ContinueStatement:
+		return true
+	}
+	return false
 }

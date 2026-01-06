@@ -79,6 +79,27 @@ var parseCmd = &cobra.Command{
 	},
 }
 
+var debugCmd = &cobra.Command{
+	Use:               "debug [file.ez]",
+	Short:             "Run a file with interactive debugger",
+	Args:              cobra.ExactArgs(1),
+	ValidArgsFunction: filterEzFiles,
+	Run: func(cmd *cobra.Command, args []string) {
+		runFileDebug(args[0])
+	},
+}
+
+var debugServerCmd = &cobra.Command{
+	Use:               "debugserver [file.ez]",
+	Short:             "Run a file with JSON protocol debugger for IDE integration",
+	Args:              cobra.ExactArgs(1),
+	ValidArgsFunction: filterEzFiles,
+	Hidden:            true,
+	Run: func(cmd *cobra.Command, args []string) {
+		runDebugServer(args[0])
+	},
+}
+
 var rootCmd = &cobra.Command{
 	Use:     "ez [file.ez]",
 	Short:   "EZ Language Interpreter",
@@ -95,7 +116,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(replCmd, updateCmd, checkCmd, lexCmd, parseCmd, versionCmd)
+	rootCmd.AddCommand(replCmd, updateCmd, checkCmd, lexCmd, parseCmd, versionCmd, debugCmd, debugServerCmd)
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		CheckForUpdateAsync()
 	}
