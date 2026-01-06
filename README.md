@@ -118,6 +118,50 @@ After this one-time manual update, `ez update` will work automatically for all f
 
 ---
 
+## Debugging
+
+EZ includes a full-featured debugger for stepping through code, inspecting variables, and setting breakpoints.
+
+### Interactive CLI Debugger
+
+Debug your programs with an interactive command-line interface:
+
+```bash
+ez debug myprogram.ez
+```
+
+**Available Commands:**
+- `step` (s) - Step to next statement
+- `next` (n) - Step over function calls
+- `out` (o) - Step out of current function
+- `continue` (c) - Continue until next breakpoint
+- `break <file>:<line>` (b) - Set breakpoint
+- `vars` (v) - Show all variables
+- `print <var>` (p) - Print variable value
+- `stack` (st) - Show call stack
+- `help` (h) - Show help
+- `quit` (q) - Quit debugger
+
+### IDE Integration
+
+For IDE developers, EZ provides a JSON-RPC debugger server:
+
+```bash
+ez debugserver myprogram.ez
+```
+
+This enables full debugging support in IDEs with:
+- Step into/over/out
+- Breakpoints
+- Variable inspection
+- Call stack viewing
+
+### Documentation
+
+For complete debugger documentation, see [DEBUGGER.md](DEBUGGER.md).
+
+---
+
 ## Running Tests
 
 ```bash

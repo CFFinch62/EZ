@@ -1,0 +1,24 @@
+/*
+ * test_debug.ez - Simple test for debugger
+ */
+
+import @std
+using std
+
+do main() {
+    temp x int = 10
+    temp y int = 20
+    temp sum int = x + y
+    
+    println("x = ${x}")
+    println("y = ${y}")
+    println("sum = ${sum}")
+    
+    temp result int = multiply(x, y)
+    println("x * y = ${result}")
+}
+
+do multiply(a int, b int) -> int {
+    temp product int = a * b
+    return product
+}
